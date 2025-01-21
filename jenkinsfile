@@ -4,8 +4,18 @@ pipeline {
         DOCKER_REGISTRY = "sakshigawade"
         IMAGE_NAME = "nodejs-app"
     }
-   stages {
-        stage('Clone Repository') {
+tools{
+    git'DefaultGit'
+}
+stages {
+    stage('Checkout'){
+        steps{
+            git branch: 'main', url: 'https://github.com/Sakshi-Gawade-05/Nodejs-app.git'
+        }
+    }
+  }
+stages {
+    stage('Clone Repository') {
             steps {
                 git 'https://github.com/Sakshi-Gawade-05/Nodejs-app.git'
             }
