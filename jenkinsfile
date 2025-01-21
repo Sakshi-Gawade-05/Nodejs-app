@@ -1,55 +1,48 @@
 pipeline {
     agent any
-  
     environment {
-        DOCKER_IMAGE = 'nodejs-app'
-        DOCKER_REGISTRY = 'sakshigawade'
-        K8S_NAMESPACE = 'default'
+        DOCKER_REGISTRY = "sakshigawade"
+        IMAGE_NAME = "nodejs-app"
     }
    stages {
-        stage('Checkout') {
+        stage('Clone Repository') {
             steps {
                 git 'https://github.com/Sakshi-Gawade-05/Nodejs-app.git'
             }
         }
-    }
-    stages {
         stage('Build Docker Image') {
             steps {
-              script{
-                  sh'docker build -t $DOCKER_REGISTRY/$DOCKER_IMAGE .'
+              script {
+                  sh'docker build -t $DOCKER_REGISTRY/$IMAGE_NAME:latest .'
               }
             }
         }
-     }
         stage('Push Docker Image') {
             steps {
-                 script{
-                  sh 'docker push $DOCKER_REFGISTRY/$DOCKER_IMAGE'
+                 script {
+                  sh "echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin"
+                  sh "docker push $DOCKER_REGISTRY/$IMAGE_NAME:latest"
                }         
             }
          }  
-        
         stage('Deploy to kubernetes') {
             steps {
-                script{
+                script {
                   sh """
-                  kubectl set image deployment/node-app-deployment node-app=$DOCKER_REGISTRY/$DOCKER_IMAGE --namespace=$K8S_NAMESPACE 
-                  kubectl rollout status deployment/node-app-deployment --namespace=$K8S_NAMESPACE
+                  kubectl apply -f deployment.yml
+                  kubectl apply -f service.yml
                   """
         }
     }
+ }
 }
-        stage('Rollback on Failure') {
-            steps {
-                script{
-                  try {
-                        sh'kubectl rollout undo deployment/node-app-deployment --namespace=$K8S_NAMESPACE'          
-                      } catch (Exception e) {
-                          echo "Rollback failed"
-                      }
-                    }
-                  }
-                }
-            }
+post {
+    failure {
+      echo "Deployment failed! Triggering rollback.."
+      script {
+         sh "kubectl rollout undo deployment/nodejs-app"
+    }
+  }
+ }
+}
 
