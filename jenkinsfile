@@ -5,7 +5,7 @@ pipeline {
         IMAGE_NAME = "nodejs-app"
     }
 tools{
-    git'DefaultGit'
+    git 'DefaultGit'
 }
 stages {
     stage('Checkout'){
